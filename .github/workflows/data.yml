@@ -1,48 +1,25 @@
-name: data
+name: backup
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
   schedule:
     - cron: "17 2 * * *"
 permissions:
   contents: write
-concurrency: data
+concurrency: backup
 jobs:
-  sync:
+  backup:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Make sure the data store exists, and back it up
+      - name: Copy the shared data into the repo
         run: |
-          set -e
-          mkdir -p data
-          SEED='{"bookings":{"2026-10-28":{"name":"דניאל אלון","note":"","at":"2026-10-15T00:00:00Z"}},"replies":[],"chat":[]}'
           ID=$(cat data/blob.txt 2>/dev/null | tr -d '[:space:]' || true)
-          CODE=none
-          if [ -n "$ID" ]; then
-            CODE=$(curl -s -o data/backup.tmp -w '%{http_code}' -H 'Accept: application/json' "https://jsonblob.com/api/jsonBlob/$ID")
-          fi
-          if [ "$CODE" = "200" ] && [ -s data/backup.tmp ]; then
-            mv data/backup.tmp data/backup.json
-          else
-            if [ -s data/backup.json ]; then BODY=$(cat data/backup.json); else BODY="$SEED"; fi
-            curl -s -D data/post-headers.txt -o data/post-body.txt -X POST -H 'Content-Type: application/json' -H 'Accept: application/json' --data "$BODY" https://jsonblob.com/api/jsonBlob || echo "curl failed $?" >> data/post-headers.txt
-            LOC=$(tr -d '\r' < data/post-headers.txt | awk 'tolower($1)=="location:"{print $2}')
-            ID=${LOC##*/}
-            if [ -z "$ID" ]; then echo "POST did not return a store id" > data/status.txt; exit 0; fi
-            rm -f data/post-headers.txt data/post-body.txt
-            echo "$ID" > data/blob.txt
-            echo "$BODY" > data/backup.json
-            echo "created new store $ID (previous status: $CODE)"
-          fi
-          rm -f data/backup.tmp
-          echo "store id: $ID"
-          echo "CORS check:"
-          curl -s -D - -o /dev/null -X OPTIONS -H 'Origin: https://asafkonyak.github.io' -H 'Access-Control-Request-Method: PUT' -H 'Access-Control-Request-Headers: content-type' "https://jsonblob.com/api/jsonBlob/$ID" | grep -i '^access-control' > data/status.txt || echo "NO CORS HEADERS" > data/status.txt
-      - name: Save to the repo
+          if [ -z "$ID" ]; then echo "no store yet"; exit 0; fi
+          CODE=$(curl -s -o /tmp/b.json -w '%{http_code}' -H 'Accept: application/json' "https://jsonblob.com/api/jsonBlob/$ID" || true)
+          if [ "$CODE" = "200" ] && [ -s /tmp/b.json ]; then cp /tmp/b.json data/backup.json; else echo "backup skipped (status $CODE)"; fi
+      - name: Save
         run: |
           git config user.name "savta-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data
-          git diff --cached --quiet || (git commit -m "גיבוי נתונים [skip ci]" && git push)
+          git add data 2>/dev/null || true
+          git diff --cached --quiet || (git commit -m "גיבוי נתונים" && git push)

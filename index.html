@@ -200,6 +200,7 @@ textarea:focus-visible,input[type=text]:focus-visible{outline:3px solid var(--mo
 .msg time{display:block;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
 .msg.sys{align-self:center;max-width:95%;background:var(--moon-soft);border:0;text-align:center;font-size:13px;font-weight:600}
 .msg.sys time{display:inline;margin-inline-start:6px}
+.setup{display:flex;flex-direction:column;gap:8px;align-items:flex-start}.setup input{width:100%}
 .empty{color:var(--muted);text-align:center;margin:auto;font-size:14px;padding:16px}
 #p-table{grid-column:1/-1}
 </style>
@@ -224,6 +225,12 @@ textarea:focus-visible,input[type=text]:focus-visible{outline:3px solid var(--mo
 <main>
   <div class="wrap">
     <div class="notice" id="notice" hidden></div>
+    <div class="notice setup" id="setup" hidden>
+      <b>הקמת הלוח (פעם אחת בלבד, לאסף)</b>
+      <p style="margin:4px 0 10px">לחיצה אחת יוצרת את מאגר הנתונים המשותף, ומקבלים קישור לשלוח למשפחה.</p>
+      <button class="btn" type="button" id="setup-btn">יצירת הלוח</button>
+      <p id="setup-err" style="margin:8px 0 0;color:var(--warn)"></p>
+    </div>
 
     <section class="welcome" id="welcome" hidden aria-labelledby="w-h">
       <h2 id="w-h">מי את/ה?</h2>
@@ -604,12 +611,39 @@ function stats(view){
 // ---------- server (Google Apps Script) ----------
 // Data lives in one JSON document on jsonblob.com; its id is published by the repo's GitHub Action.
 let BLOB=null;
+const QS=new URLSearchParams(location.search);
+const validId=t=>/^[A-Za-z0-9_-]{6,64}$/.test(t||"");
 async function blobId(){
   if(BLOB)return BLOB;
+  const q=QS.get("b");
+  if(validId(q)){BLOB=q;try{localStorage.setItem("pajama-blob",q)}catch(e){};return q}
   for(const u of ["data/blob.txt?t="+Date.now(),"https://raw.githubusercontent.com/asafkonyak/savta/main/data/blob.txt?t="+Date.now()]){
-    try{const r=await fetch(u,{cache:"no-store"});if(r.ok){const t=(await r.text()).trim();if(t){BLOB=t;return t}}}catch(e){}
+    try{const r=await fetch(u,{cache:"no-store"});if(r.ok){const t=(await r.text()).trim();if(validId(t)){BLOB=t;return t}}}catch(e){}
   }
-  throw new Error("no blob id");
+  try{const l=localStorage.getItem("pajama-blob");if(validId(l)){BLOB=l;return l}}catch(e){}
+  const e=new Error("no store");e.code="noblob";throw e;
+}
+// One-time setup: creates the shared store from the browser and shows the link to share.
+async function createStore(){
+  const btn=$("setup-btn");btn.disabled=true;btn.textContent="יוצר…";
+  try{
+    const seed={bookings:{"2026-10-28":{name:"דניאל אלון",note:"",at:"2026-10-15T00:00:00Z"}},replies:[],chat:[]};
+    const r=await fetch("https://jsonblob.com/api/jsonBlob",{method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify(seed)});
+    const loc=r.headers.get("Location")||"";
+    const id=loc.split("/").pop()||r.headers.get("X-jsonblob-id")||r.headers.get("x-jsonblob")||"";
+    if(!r.ok||!validId(id))throw new Error("status "+r.status+" id "+(id||"none"));
+    BLOB=id;try{localStorage.setItem("pajama-blob",id)}catch(e){}
+    const link=location.origin+location.pathname+"?b="+id;
+    history.replaceState(null,"","?b="+id);
+    const s=$("setup");s.textContent="";
+    s.appendChild(el("b",null,"הלוח נוצר! זה הקישור לשלוח למשפחה:"));
+    const inp=el("input");inp.type="text";inp.readOnly=true;inp.value=link;inp.id="setup-link";inp.dir="ltr";s.appendChild(inp);
+    const c=el("button","btn","העתקת הקישור");c.type="button";c.onclick=async()=>{try{await navigator.clipboard.writeText(link);toast("הקישור הועתק")}catch(e){inp.select()}};s.appendChild(c);
+    refresh();
+  }catch(e){
+    btn.disabled=false;btn.textContent="נסו שוב";
+    $("setup-err").textContent="היצירה לא הצליחה ("+e.message+"). צלמו מסך ושלחו ל־Claude.";
+  }
 }
 const blobUrl=id=>"https://jsonblob.com/api/jsonBlob/"+id;
 async function load(){
@@ -668,8 +702,15 @@ function apply(res){if(res&&res.error)toast(res.error);if(res&&res.state)applySt
 let polling=false;
 async function refresh(){
   if(polling||busy)return;polling=true;
-  try{applyState(await api("getState"))}
-  catch(e){notice(live?"אין כרגע חיבור ללוח. מנסה שוב…":"הלוח נטען…")}
+  try{applyState(await api("getState"));$("setup").hidden=true;
+    try{localStorage.setItem("pajama-last",JSON.stringify(await api("getState")))}catch(e){}}
+  catch(e){
+    if(e.code==="noblob"){$("setup").hidden=false;notice("");}
+    else{
+      notice(live?"אין כרגע חיבור ללוח. מנסה שוב…":"הלוח נטען…");
+      if(!live){try{const last=JSON.parse(localStorage.getItem("pajama-last")||"null");if(last){applyState(last);live=false;notice("אין חיבור כרגע. מוצג הלוח כפי שנשמר במכשיר הזה.")}}catch(_){}}
+    }
+  }
   finally{polling=false}
 }
 
@@ -704,6 +745,7 @@ function handleErr(e){toast("משהו השתבש. בדקו את החיבור ו�
 
 show();drawStars();
 requestAnimationFrame(()=>render(true));
+$("setup-btn").onclick=createStore;
 refresh();
 setInterval(()=>{if(!document.hidden)refresh()},15000);
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)refresh()});
