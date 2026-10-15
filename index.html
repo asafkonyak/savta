@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>פיג׳מות אצל סבתא מרסל</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Secular+One&family=Assistant:wght@400;600;700&display=swap">
+<style>
+html{-webkit-text-size-adjust:100%}body{margin:0;font-size:16px}img{max-width:100%}[hidden]{display:none!important}
+/* Layout: night-sky header band, then a two-column board (calendar list | fairness panel) that stacks on phones. RTL. */
+:root{
+  --bg:#F2F3FA; --surface:#FFFFFF; --ink:#1A1F3D; --muted:#5D6386; --line:#DADDEF;
+  --night:#2B2F78; --night-ink:#F4F2FF; --moon:#E8B23A; --moon-soft:#FBF0D3;
+  --free:#1F8A5B; --free-soft:#E2F4EA; --warn:#B8541B; --warn-soft:#FBE7DA; --mine:#6B4FD8; --mine-soft:#ECE7FF;
+  --display:"Secular One","Assistant",system-ui,sans-serif; --body:"Assistant",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10132A; --surface:#1A1E3C; --ink:#ECEDF8; --muted:#A3A8CC; --line:#2D3260;
+  --night:#0B0D22; --night-ink:#F4F2FF; --moon:#F2C25A; --moon-soft:#3A3420;
+  --free:#5CC995; --free-soft:#173528; --warn:#F09A62; --warn-soft:#3B2618; --mine:#A995FF; --mine-soft:#2C2558; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10132A; --surface:#1A1E3C; --ink:#ECEDF8; --muted:#A3A8CC; --line:#2D3260;
+  --night:#0B0D22; --night-ink:#F4F2FF; --moon:#F2C25A; --moon-soft:#3A3420;
+  --free:#5CC995; --free-soft:#173528; --warn:#F09A62; --warn-soft:#3B2618; --mine:#A995FF; --mine-soft:#2C2558; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.sky{background:var(--night);color:var(--night-ink);position:relative;overflow:hidden}
+header.sky .wrap{padding-block:28px 24px;display:flex;gap:20px;align-items:center;justify-content:space-between;flex-wrap:wrap;position:relative}
+header.sky canvas{position:absolute;inset:0;width:100%;height:100%;opacity:.8}
+.moon{width:64px;height:64px;border-radius:50%;background:var(--moon);box-shadow:inset -14px -6px 0 0 rgba(0,0,0,.18),0 0 40px rgba(232,178,58,.45);flex:none}
+h1{font-family:var(--display);font-weight:400;font-size:clamp(28px,5vw,42px);line-height:1.1;margin:0;text-wrap:balance}
+.sub{margin:6px 0 0;opacity:.85;max-width:56ch}
+.who{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);padding:10px 12px;border-radius:14px}
+.who label{font-weight:600}
+select,button{font:inherit}
+select{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:170px}
+main .wrap{padding-block:24px 48px;display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:820px){main .wrap{grid-template-columns:1fr}}
+.notice{grid-column:1/-1;border-radius:12px;padding:12px 14px;background:var(--moon-soft);color:var(--ink);border:1px solid var(--line)}
+.notice[hidden]{display:none}
+h2{font-family:var(--display);font-weight:400;font-size:22px;margin:0 0 4px}
+.hint{color:var(--muted);margin:0 0 14px;font-size:15px}
+.weeks{display:flex;flex-direction:column;gap:18px}
+.week h3{font-size:13px;letter-spacing:.06em;color:var(--muted);margin:0 0 8px;font-weight:700}
+.nights{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.night{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px;min-height:128px}
+.night .d{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+.night .day{font-weight:700}
+.night .date{font-variant-numeric:tabular-nums;color:var(--muted);font-size:14px}
+.night .wk{font-size:12px;color:var(--moon);font-weight:700}
+.night .who-slot{flex:1;display:flex;align-items:center;font-size:17px;font-weight:600;min-width:0;overflow-wrap:anywhere}
+.night.taken{background:var(--surface)}
+.night.taken .who-slot::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--night);margin-inline-end:8px;flex:none}
+:root .night.taken .who-slot::before{background:var(--muted)}
+.night.mine{border-color:var(--mine);background:var(--mine-soft)}
+.night.mine .who-slot::before{background:var(--mine)}
+.night.free{border-style:dashed}
+.night.free .who-slot{color:var(--free);font-weight:600;font-size:15px}
+.night.soon.free{border-color:var(--warn);background:var(--warn-soft)}
+.night.soon.free .who-slot{color:var(--warn)}
+.night.past{opacity:.55}
+.btn{border:0;border-radius:10px;padding:8px 10px;font-weight:700;cursor:pointer;background:var(--night);color:var(--night-ink)}
+.btn.ghost{background:transparent;color:var(--muted);border:1px solid var(--line);font-weight:600}
+.btn.danger{background:var(--warn);color:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn:focus-visible,select:focus-visible{outline:3px solid var(--moon);outline-offset:2px}
+.row{display:flex;gap:6px;flex-wrap:wrap}
+aside{display:flex;flex-direction:column;gap:16px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+@media (max-width:820px){aside{position:static}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px}
+.big{display:flex;gap:16px;flex-wrap:wrap}
+.big div{flex:1;min-width:90px}
+.big b{display:block;font-family:var(--display);font-weight:400;font-size:30px;line-height:1;font-variant-numeric:tabular-nums}
+.big span{color:var(--muted);font-size:13px}
+.bar{height:10px;background:var(--line);border-radius:6px;overflow:hidden;margin:14px 0 6px}
+.bar i{display:block;height:100%;background:var(--moon);width:0;transition:width .4s}
+.verdict{padding:10px 12px;border-radius:10px;font-weight:600;font-size:15px}
+.verdict.ok{background:var(--free-soft);color:var(--free)}
+.verdict.bad{background:var(--warn-soft);color:var(--warn)}
+ul.people{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+ul.people li{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);font-size:15px}
+ul.people li:last-child{border-bottom:0}
+.chip{font-size:12px;font-weight:700;border-radius:999px;padding:2px 8px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.chip.y{background:var(--free-soft);color:var(--free)}
+.chip.n{background:var(--line);color:var(--muted)}
+.chip.x{background:var(--warn-soft);color:var(--warn)}
+.rules{margin:0;padding-inline-start:18px;color:var(--muted);font-size:14px;display:flex;flex-direction:column;gap:4px}
+.toast{position:fixed;inset-inline:0;bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;justify-content:center;pointer-events:none;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.toast div{background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+.confirm{font-size:14px;color:var(--ink)}
+.months{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:14px;scrollbar-width:thin}
+.months button{flex:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 12px;font-weight:600;cursor:pointer;display:flex;gap:6px;align-items:center}
+.months button[aria-pressed="true"]{background:var(--night);color:var(--night-ink);border-color:var(--night)}
+.months button small{font-variant-numeric:tabular-nums;opacity:.75;font-weight:400}
+.months button:focus-visible{outline:3px solid var(--moon);outline-offset:2px}
+.tbl{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.tbl th{font-size:12px;color:var(--muted);font-weight:700;text-align:start;padding:4px 4px 6px;border-bottom:1px solid var(--line)}
+.tbl td{padding:6px 4px;border-bottom:1px solid var(--line)}
+.tbl tr:last-child td{border-bottom:0}
+.tbl td.n{text-align:center}
+.tbl tr.me td{background:var(--mine-soft)}
+.mini{height:6px;background:var(--line);border-radius:4px;overflow:hidden;min-width:44px}
+.mini i{display:block;height:100%;background:var(--moon)}
+.mini i.low{background:var(--warn)}
+.mynights{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.mynights span{background:var(--mine-soft);color:var(--mine);border-radius:999px;padding:2px 10px;font-size:13px;font-weight:700}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+.chipbtn{border:0;background:var(--mine-soft);color:var(--mine);border-radius:999px;padding:4px 10px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+</style>
+
+</head>
+<body>
+<style>
+.tag{font-size:12px;font-weight:700;border-radius:6px;padding:1px 6px;align-self:flex-start;max-width:100%;overflow-wrap:anywhere}
+.tag.hol{background:var(--moon-soft);color:var(--ink)}
+.tag.chag{background:var(--moon);color:#1A1F3D}
+.times{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.times b{color:var(--ink);font-weight:700}
+.night.special{border-color:var(--moon)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin:12px 0 0}
+.legend span{display:flex;gap:6px;align-items:center}
+.legend i{width:12px;height:12px;border-radius:4px;display:inline-block;border:1px solid var(--line)}
+.tblwrap{overflow-x:auto}
+[hidden]{display:none!important}
+main .wrap{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.board{grid-column:1/-1}
+@media (max-width:820px){main .wrap{grid-template-columns:minmax(0,1fr)}}
+aside{display:contents}
+/* week navigation */
+.weeknav{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.weeknav .range{flex:1;text-align:center;min-width:0}
+.weeknav .range b{display:block;font-family:var(--display);font-weight:400;font-size:22px;line-height:1.1;font-variant-numeric:tabular-nums}
+.weeknav .range select{margin-top:4px;min-width:0;padding:4px 8px;font-size:14px}
+.arrow{width:48px;height:48px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:24px;line-height:1;cursor:pointer;flex:none;display:grid;place-items:center}
+.arrow:disabled{opacity:.35;cursor:not-allowed}
+.arrow:focus-visible{outline:3px solid var(--moon);outline-offset:2px}
+.arrow small{display:none}
+.todaybtn{border:0;background:transparent;color:var(--mine);font-weight:700;cursor:pointer;font:inherit;font-size:14px;text-decoration:underline}
+.daypick{display:none;gap:4px;margin-bottom:10px}
+.daypick button{flex:1;min-width:0;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:6px 0;font:inherit;font-size:13px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;line-height:1.2}
+.daypick button small{font-weight:400;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.daypick button.f{border-color:var(--free)}
+.daypick button.m{background:var(--mine-soft);border-color:var(--mine)}
+.daypick button.on{background:var(--night);color:var(--night-ink);border-color:var(--night)}
+.daypick button.on small{color:var(--night-ink)}
+.daypick button.x{opacity:.4}
+.week7{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;touch-action:pan-y}
+.week7 .night{min-height:190px}
+.night.blank{visibility:hidden}
+@media (max-width:820px){
+  .daypick{display:flex}
+  .week7{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:10px;padding-bottom:6px;touch-action:auto;scrollbar-width:none}
+  .week7::-webkit-scrollbar{display:none}
+  .week7 .night{flex:0 0 78%;scroll-snap-align:center;min-height:200px}
+  .week7 .night.blank{display:none}
+}
+/* welcome */
+.welcome{grid-column:1/-1;display:flex;flex-direction:column;gap:14px}
+.welcome h2{font-size:26px}
+.steps{display:flex;gap:10px;flex-wrap:wrap;margin:0;padding:0;list-style:none}
+.steps li{flex:1 1 180px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;font-size:15px}
+.steps li b{display:block;font-family:var(--display);font-weight:400;font-size:18px;color:var(--mine)}
+.names{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.names button{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:12px 8px;font:inherit;font-weight:700;font-size:16px;cursor:pointer}
+.names button:hover{border-color:var(--mine);background:var(--mine-soft)}
+.names button:focus-visible{outline:3px solid var(--moon);outline-offset:2px}
+.hello{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.hello b{font-size:18px}
+.linkbtn{border:0;background:transparent;color:var(--night-ink);text-decoration:underline;cursor:pointer;font:inherit;opacity:.85}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.night{cursor:pointer}
+.night.sel{outline:3px solid var(--mine);outline-offset:1px}
+.notesnip{font-size:13px;color:var(--muted);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow-wrap:anywhere}
+.notesnip b{color:var(--ink)}
+/* day details */
+.details{margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.details h3{font-family:var(--display);font-weight:400;font-size:22px;margin:0}
+.details .meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.details .status{font-size:18px;font-weight:700}
+.note{background:var(--moon-soft);border-radius:12px;padding:10px 12px;white-space:pre-wrap;overflow-wrap:anywhere}
+.note small{display:block;color:var(--muted);font-size:12px;margin-bottom:2px;white-space:normal}
+textarea,input[type=text]{font:inherit;width:100%;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+textarea{min-height:64px;resize:vertical}
+textarea:focus-visible,input[type=text]:focus-visible{outline:3px solid var(--moon);outline-offset:1px}
+.replies{display:flex;flex-direction:column;gap:6px}
+.reply{border-inline-start:3px solid var(--line);padding:2px 10px;overflow-wrap:anywhere}
+.reply b{font-size:14px}
+.reply span{color:var(--muted);font-size:12px;margin-inline-start:6px}
+.reply p{margin:2px 0 0;white-space:pre-wrap}
+.say{display:flex;gap:8px;align-items:flex-end}
+.say input,.say textarea{flex:1;min-width:0}
+/* chat */
+.chat{display:flex;flex-direction:column;gap:10px}
+.msgs{height:360px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:4px;background:var(--bg);border-radius:12px;border:1px solid var(--line)}
+.msg{max-width:85%;align-self:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:6px 10px;overflow-wrap:anywhere}
+.msg.me{align-self:flex-end;background:var(--mine-soft);border-color:var(--mine)}
+.msg b{font-size:13px;color:var(--mine)}
+.msg p{margin:0;white-space:pre-wrap}
+.msg time{display:block;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.msg.sys{align-self:center;max-width:95%;background:var(--moon-soft);border:0;text-align:center;font-size:13px;font-weight:600}
+.msg.sys time{display:inline;margin-inline-start:6px}
+.empty{color:var(--muted);text-align:center;margin:auto;font-size:14px;padding:16px}
+#p-table{grid-column:1/-1}
+</style>
+<div dir="rtl" lang="he">
+<header class="sky">
+  <canvas id="stars" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <div style="display:flex;gap:16px;align-items:center;min-width:0">
+      <div class="moon" aria-hidden="true"></div>
+      <div style="min-width:0">
+        <h1>מסיבת פיג׳מות אצל סבתא מרסל</h1>
+        <p class="sub">משמרת הלילה בחסות סבתוש · 19.10.2026 – 18.10.2027</p>
+      </div>
+    </div>
+    <div class="who hello" id="hello" hidden>
+      <span>שלום,</span><b id="hello-name"></b>
+      <button class="linkbtn" id="switch" type="button">לא את/ה? החלפה</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="notice" id="notice" hidden></div>
+
+    <section class="welcome" id="welcome" hidden aria-labelledby="w-h">
+      <h2 id="w-h">מי את/ה?</h2>
+      <p class="hint" style="margin:0">לחצו על השם שלכם כדי להיכנס ללוח. הבחירה נשמרת במכשיר הזה.</p>
+      <div class="names" id="names"></div>
+      <ol class="steps">
+        <li><b>1. בוחרים שם</b>כאן למעלה, פעם אחת.</li>
+        <li><b>2. מדפדפים בשבועות</b>עם החיצים או בהחלקה.</li>
+        <li><b>3. לוחצים "אני ישן/ה פה"</b>על לילה פנוי. אפשר להוסיף הערה.</li>
+      </ol>
+    </section>
+
+    <section class="board" id="board" hidden aria-labelledby="cal-h">
+      <h2 id="cal-h" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">הלילות</h2>
+      <div class="weeknav">
+        <button class="arrow" id="prev" type="button" aria-label="השבוע הקודם">›</button>
+        <div class="range">
+          <b id="range"></b>
+          <label for="jump" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">קפיצה לחודש</label>
+          <select id="jump"></select>
+          <button class="todaybtn" id="today" type="button">היום</button>
+        </div>
+        <button class="arrow" id="next" type="button" aria-label="השבוע הבא">‹</button>
+      </div>
+      <p class="hint" id="cal-hint" style="text-align:center"></p>
+      <div class="daypick" id="daypick" role="tablist" aria-label="ימי השבוע"></div>
+      <div class="week7" id="week"></div>
+      <div class="legend">
+        <span><i style="background:var(--moon)"></i>שבת וחג</span>
+        <span><i style="background:var(--warn-soft);border-color:var(--warn)"></i>פנוי בימים הקרובים</span>
+        <span><i style="background:var(--mine-soft);border-color:var(--mine)"></i>הלילות שלי</span>
+      </div>
+      <div class="details" id="details" aria-live="polite"></div>
+    </section>
+
+    <aside aria-label="צ׳אט וניתוח שוויון">
+      <div class="panel chat" id="p-chat" hidden>
+        <h2>הצ׳אט המשפחתי</h2>
+        <div class="msgs" id="msgs"><p class="empty">עוד אין הודעות. כל שיבוץ, ביטול והערה יופיעו כאן.</p></div>
+        <form class="say" id="chat-form">
+          <label for="chat-in" class="sr">הודעה לכולם</label>
+          <input type="text" id="chat-in" maxlength="500" placeholder="כתבו הודעה לכולם…" autocomplete="off">
+          <button class="btn" type="submit" id="chat-send">שליחה</button>
+        </form>
+      </div>
+      <div class="panel" id="p-stats" hidden>
+        <h2>ניתוח שוויון</h2>
+        <div class="big">
+          <div><b id="s-booked">0</b><span>לילות שובצו מתוך <span id="s-total">365</span></span></div>
+          <div><b id="s-target">19</b><span>היעד השנתי לכל נכד</span></div>
+          <div><b id="s-spread">0</b><span>פער בין הכי הרבה להכי מעט</span></div>
+        </div>
+        <div class="bar"><i id="s-bar"></i></div>
+        <p class="hint" style="margin:0 0 12px" id="s-math"></p>
+        <div class="verdict ok" id="verdict"></div>
+        <div id="mine-box" hidden>
+          <p class="hint" style="margin:12px 0 0" id="mine-sum"></p>
+          <div class="mynights" id="mine-list"></div>
+        </div>
+        <h2 style="margin-top:18px">הכללים</h2>
+        <ol class="rules" id="rules"></ol>
+      </div>
+      <div class="panel" id="p-table" hidden>
+        <h2>טבלת הנכדים</h2>
+        <p class="hint" style="margin:0 0 8px">מסודר ממי שישן הכי מעט. מי שלמעלה קודם בתור.</p>
+        <div class="tblwrap">
+          <table class="tbl">
+            <thead><tr><th>שם</th><th>שנה</th><th>שבת/חג</th><th id="th-month">החודש</th><th style="min-width:60px">ליעד</th></tr></thead>
+            <tbody id="people"></tbody>
+          </table>
+        </div>
+      </div>
+    </aside>
+  </div>
+</main>
+<div class="toast" aria-live="polite"><div id="toast" hidden></div></div>
+</div>
+
+<script>
+const CAL={"holidays":{"2026-12-04":[{"n":"חנוכה: א׳ נר","m":false}],"2026-12-05":[{"n":"חנוכה: ב׳ נרות","m":false}],"2026-12-06":[{"n":"חנוכה: ג׳ נרות","m":false}],"2026-12-07":[{"n":"חנוכה: ד׳ נרות","m":false}],"2026-12-08":[{"n":"חנוכה: ה׳ נרות","m":false}],"2026-12-09":[{"n":"חנוכה: ו׳ נרות","m":false}],"2026-12-10":[{"n":"חנוכה: ז׳ נרות","m":false}],"2026-12-11":[{"n":"חנוכה: ח׳ נרות","m":false}],"2026-12-12":[{"n":"חנוכה: יום ח׳","m":false}],"2026-12-20":[{"n":"עשרה בטבת","m":false}],"2027-01-23":[{"n":"ט״ו בשבט","m":false}],"2027-03-22":[{"n":"תענית אסתר","m":false},{"n":"ערב פורים","m":false}],"2027-03-23":[{"n":"פורים","m":false}],"2027-03-24":[{"n":"שושן פורים","m":false}],"2027-04-21":[{"n":"תענית בכורות","m":false},{"n":"ערב פסח","m":false}],"2027-04-22":[{"n":"פסח א׳","m":true}],"2027-04-23":[{"n":"פסח ב׳ (חוה״מ)","m":false}],"2027-04-24":[{"n":"פסח ג׳ (חוה״מ)","m":false}],"2027-04-25":[{"n":"פסח ד׳ (חוה״מ)","m":false}],"2027-04-26":[{"n":"פסח ה׳ (חוה״מ)","m":false}],"2027-04-27":[{"n":"פסח ו׳ (חוה״מ)","m":false}],"2027-04-28":[{"n":"פסח ז׳","m":true}],"2027-05-04":[{"n":"יום השואה","m":false}],"2027-05-11":[{"n":"יום הזכרון","m":false}],"2027-05-12":[{"n":"יום העצמאות","m":false}],"2027-05-25":[{"n":"ל״ג בעומר","m":false}],"2027-06-04":[{"n":"יום ירושלים","m":false}],"2027-06-10":[{"n":"ערב שבועות","m":false}],"2027-06-11":[{"n":"שבועות","m":true}],"2027-07-22":[{"n":"צום י״ז בתמוז","m":false}],"2027-08-11":[{"n":"ערב תשעה באב","m":false}],"2027-08-12":[{"n":"תשעה באב","m":false}],"2027-08-18":[{"n":"ט״ו באב","m":false}],"2027-10-01":[{"n":"ערב ראש השנה","m":false}],"2027-10-02":[{"n":"ראש השנה א׳","m":true}],"2027-10-03":[{"n":"ראש השנה ב׳","m":true}],"2027-10-04":[{"n":"צום גדליה","m":false}],"2027-10-10":[{"n":"ערב יום כפור","m":false}],"2027-10-11":[{"n":"יום כפור","m":true}],"2027-10-15":[{"n":"ערב סוכות","m":false}],"2027-10-16":[{"n":"סוכות א׳","m":true}],"2027-10-17":[{"n":"סוכות ב׳ (חוה״מ)","m":false}],"2027-10-18":[{"n":"סוכות ג׳ (חוה״מ)","m":false}]},"times":{"ירושלים":{"2026-10-23":{"in":"17:18"},"2026-10-24":{"out":"18:34"},"2026-10-30":{"in":"16:11"},"2026-10-31":{"out":"17:28"},"2026-11-06":{"in":"16:05"},"2026-11-07":{"out":"17:23"},"2026-11-13":{"in":"16:00"},"2026-11-14":{"out":"17:18"},"2026-11-20":{"in":"15:57"},"2026-11-21":{"out":"17:16"},"2026-11-27":{"in":"15:55"},"2026-11-28":{"out":"17:14"},"2026-12-04":{"in":"15:54"},"2026-12-05":{"out":"17:14"},"2026-12-11":{"in":"15:55"},"2026-12-12":{"out":"17:16"},"2026-12-18":{"in":"15:58"},"2026-12-19":{"out":"17:18"},"2026-12-25":{"in":"16:01"},"2026-12-26":{"out":"17:22"},"2027-01-01":{"in":"16:06"},"2027-01-02":{"out":"17:26"},"2027-01-08":{"in":"16:11"},"2027-01-09":{"out":"17:32"},"2027-01-15":{"in":"16:17"},"2027-01-16":{"out":"17:37"},"2027-01-22":{"in":"16:23"},"2027-01-23":{"out":"17:43"},"2027-01-29":{"in":"16:30"},"2027-01-30":{"out":"17:49"},"2027-02-05":{"in":"16:36"},"2027-02-06":{"out":"17:55"},"2027-02-12":{"in":"16:42"},"2027-02-13":{"out":"18:01"},"2027-02-19":{"in":"16:48"},"2027-02-20":{"out":"18:06"},"2027-02-26":{"in":"16:54"},"2027-02-27":{"out":"18:12"},"2027-03-05":{"in":"16:59"},"2027-03-06":{"out":"18:17"},"2027-03-12":{"in":"17:04"},"2027-03-13":{"out":"18:22"},"2027-03-19":{"in":"17:09"},"2027-03-20":{"out":"18:26"},"2027-03-26":{"in":"18:14"},"2027-03-27":{"out":"19:31"},"2027-04-02":{"in":"18:19"},"2027-04-03":{"out":"19:36"},"2027-04-09":{"in":"18:23"},"2027-04-10":{"out":"19:41"},"2027-04-16":{"in":"18:28"},"2027-04-17":{"out":"19:47"},"2027-04-21":{"in":"18:31"},"2027-04-22":{"out":"19:51"},"2027-04-23":{"in":"18:33"},"2027-04-24":{"out":"19:52"},"2027-04-27":{"in":"18:36"},"2027-04-28":{"out":"19:55"},"2027-04-30":{"in":"18:38"},"2027-05-01":{"out":"19:58"},"2027-05-07":{"in":"18:43"},"2027-05-08":{"out":"20:03"},"2027-05-14":{"in":"18:48"},"2027-05-15":{"out":"20:09"},"2027-05-21":{"in":"18:52"},"2027-05-22":{"out":"20:14"},"2027-05-28":{"in":"18:57"},"2027-05-29":{"out":"20:19"},"2027-06-04":{"in":"19:01"},"2027-06-05":{"out":"20:24"},"2027-06-10":{"in":"19:04"},"2027-06-11":{"in":"19:04"},"2027-06-12":{"out":"20:27"},"2027-06-18":{"in":"19:06"},"2027-06-19":{"out":"20:30"},"2027-06-25":{"in":"19:08"},"2027-06-26":{"out":"20:31"},"2027-07-02":{"in":"19:08"},"2027-07-03":{"out":"20:31"},"2027-07-09":{"in":"19:07"},"2027-07-10":{"out":"20:29"},"2027-07-16":{"in":"19:05"},"2027-07-17":{"out":"20:26"},"2027-07-23":{"in":"19:02"},"2027-07-24":{"out":"20:22"},"2027-07-30":{"in":"18:57"},"2027-07-31":{"out":"20:17"},"2027-08-06":{"in":"18:51"},"2027-08-07":{"out":"20:10"},"2027-08-13":{"in":"18:45"},"2027-08-14":{"out":"20:03"},"2027-08-20":{"in":"18:37"},"2027-08-21":{"out":"19:54"},"2027-08-27":{"in":"18:29"},"2027-08-28":{"out":"19:46"},"2027-09-03":{"in":"18:21"},"2027-09-04":{"out":"19:37"},"2027-09-10":{"in":"18:12"},"2027-09-11":{"out":"19:27"},"2027-09-17":{"in":"18:02"},"2027-09-18":{"out":"19:18"},"2027-09-24":{"in":"17:53"},"2027-09-25":{"out":"19:09"},"2027-10-01":{"in":"17:44"},"2027-10-02":{"in":"18:59"},"2027-10-03":{"out":"18:58"},"2027-10-08":{"in":"17:35"},"2027-10-09":{"out":"18:51"},"2027-10-10":{"in":"17:33"},"2027-10-11":{"out":"18:48"},"2027-10-15":{"in":"17:27"},"2027-10-16":{"out":"18:43"}},"תל אביב":{"2026-10-23":{"in":"17:41"},"2026-10-24":{"out":"18:36"},"2026-10-30":{"in":"16:34"},"2026-10-31":{"out":"17:29"},"2026-11-06":{"in":"16:28"},"2026-11-07":{"out":"17:24"},"2026-11-13":{"in":"16:24"},"2026-11-14":{"out":"17:20"},"2026-11-20":{"in":"16:20"},"2026-11-21":{"out":"17:17"},"2026-11-27":{"in":"16:18"},"2026-11-28":{"out":"17:16"},"2026-12-04":{"in":"16:17"},"2026-12-05":{"out":"17:16"},"2026-12-11":{"in":"16:18"},"2026-12-12":{"out":"17:17"},"2026-12-18":{"in":"16:21"},"2026-12-19":{"out":"17:19"},"2026-12-25":{"in":"16:24"},"2026-12-26":{"out":"17:23"},"2027-01-01":{"in":"16:29"},"2027-01-02":{"out":"17:28"},"2027-01-08":{"in":"16:34"},"2027-01-09":{"out":"17:33"},"2027-01-15":{"in":"16:40"},"2027-01-16":{"out":"17:39"},"2027-01-22":{"in":"16:47"},"2027-01-23":{"out":"17:45"},"2027-01-29":{"in":"16:53"},"2027-01-30":{"out":"17:51"},"2027-02-05":{"in":"16:59"},"2027-02-06":{"out":"17:56"},"2027-02-12":{"in":"17:06"},"2027-02-13":{"out":"18:02"},"2027-02-19":{"in":"17:12"},"2027-02-20":{"out":"18:08"},"2027-02-26":{"in":"17:17"},"2027-02-27":{"out":"18:13"},"2027-03-05":{"in":"17:23"},"2027-03-06":{"out":"18:18"},"2027-03-12":{"in":"17:28"},"2027-03-13":{"out":"18:23"},"2027-03-19":{"in":"17:33"},"2027-03-20":{"out":"18:28"},"2027-03-26":{"in":"18:38"},"2027-03-27":{"out":"19:33"},"2027-04-02":{"in":"18:43"},"2027-04-03":{"out":"19:38"},"2027-04-09":{"in":"18:47"},"2027-04-10":{"out":"19:44"},"2027-04-16":{"in":"18:52"},"2027-04-17":{"out":"19:49"},"2027-04-21":{"in":"18:56"},"2027-04-22":{"out":"19:53"},"2027-04-23":{"in":"18:57"},"2027-04-24":{"out":"19:54"},"2027-04-27":{"in":"19:00"},"2027-04-28":{"out":"19:58"},"2027-04-30":{"in":"19:02"},"2027-05-01":{"out":"20:00"},"2027-05-07":{"in":"19:07"},"2027-05-08":{"out":"20:06"},"2027-05-14":{"in":"19:12"},"2027-05-15":{"out":"20:11"},"2027-05-21":{"in":"19:17"},"2027-05-22":{"out":"20:17"},"2027-05-28":{"in":"19:21"},"2027-05-29":{"out":"20:22"},"2027-06-04":{"in":"19:25"},"2027-06-05":{"out":"20:26"},"2027-06-10":{"in":"19:28"},"2027-06-11":{"in":"19:29"},"2027-06-12":{"out":"20:30"},"2027-06-18":{"in":"19:31"},"2027-06-19":{"out":"20:32"},"2027-06-25":{"in":"19:32"},"2027-06-26":{"out":"20:33"},"2027-07-02":{"in":"19:33"},"2027-07-03":{"out":"20:33"},"2027-07-09":{"in":"19:32"},"2027-07-10":{"out":"20:32"},"2027-07-16":{"in":"19:29"},"2027-07-17":{"out":"20:29"},"2027-07-23":{"in":"19:26"},"2027-07-24":{"out":"20:25"},"2027-07-30":{"in":"19:21"},"2027-07-31":{"out":"20:19"},"2027-08-06":{"in":"19:16"},"2027-08-07":{"out":"20:12"},"2027-08-13":{"in":"19:09"},"2027-08-14":{"out":"20:05"},"2027-08-20":{"in":"19:01"},"2027-08-21":{"out":"19:57"},"2027-08-27":{"in":"18:53"},"2027-08-28":{"out":"19:48"},"2027-09-03":{"in":"18:45"},"2027-09-04":{"out":"19:39"},"2027-09-10":{"in":"18:36"},"2027-09-11":{"out":"19:29"},"2027-09-17":{"in":"18:26"},"2027-09-18":{"out":"19:20"},"2027-09-24":{"in":"18:17"},"2027-09-25":{"out":"19:10"},"2027-10-01":{"in":"18:08"},"2027-10-02":{"in":"19:01"},"2027-10-03":{"out":"19:00"},"2027-10-08":{"in":"17:59"},"2027-10-09":{"out":"18:52"},"2027-10-10":{"in":"17:56"},"2027-10-11":{"out":"18:50"},"2027-10-15":{"in":"17:50"},"2027-10-16":{"out":"18:44"}},"חיפה":{"2026-10-23":{"in":"17:28"},"2026-10-24":{"out":"18:34"},"2026-10-30":{"in":"16:21"},"2026-10-31":{"out":"17:28"},"2026-11-06":{"in":"16:14"},"2026-11-07":{"out":"17:22"},"2026-11-13":{"in":"16:09"},"2026-11-14":{"out":"17:18"},"2026-11-20":{"in":"16:06"},"2026-11-21":{"out":"17:15"},"2026-11-27":{"in":"16:04"},"2026-11-28":{"out":"17:13"},"2026-12-04":{"in":"16:03"},"2026-12-05":{"out":"17:13"},"2026-12-11":{"in":"16:04"},"2026-12-12":{"out":"17:15"},"2026-12-18":{"in":"16:06"},"2026-12-19":{"out":"17:17"},"2026-12-25":{"in":"16:09"},"2026-12-26":{"out":"17:21"},"2027-01-01":{"in":"16:14"},"2027-01-02":{"out":"17:25"},"2027-01-08":{"in":"16:20"},"2027-01-09":{"out":"17:31"},"2027-01-15":{"in":"16:26"},"2027-01-16":{"out":"17:36"},"2027-01-22":{"in":"16:32"},"2027-01-23":{"out":"17:43"},"2027-01-29":{"in":"16:39"},"2027-01-30":{"out":"17:49"},"2027-02-05":{"in":"16:45"},"2027-02-06":{"out":"17:55"},"2027-02-12":{"in":"16:52"},"2027-02-13":{"out":"18:01"},"2027-02-19":{"in":"16:58"},"2027-02-20":{"out":"18:07"},"2027-02-26":{"in":"17:04"},"2027-02-27":{"out":"18:12"},"2027-03-05":{"in":"17:10"},"2027-03-06":{"out":"18:17"},"2027-03-12":{"in":"17:15"},"2027-03-13":{"out":"18:23"},"2027-03-19":{"in":"17:20"},"2027-03-20":{"out":"18:28"},"2027-03-26":{"in":"18:25"},"2027-03-27":{"out":"19:33"},"2027-04-02":{"in":"18:30"},"2027-04-03":{"out":"19:38"},"2027-04-09":{"in":"18:35"},"2027-04-10":{"out":"19:44"},"2027-04-16":{"in":"18:40"},"2027-04-17":{"out":"19:49"},"2027-04-21":{"in":"18:44"},"2027-04-22":{"out":"19:53"},"2027-04-23":{"in":"18:45"},"2027-04-24":{"out":"19:55"},"2027-04-27":{"in":"18:48"},"2027-04-28":{"out":"19:58"},"2027-04-30":{"in":"18:50"},"2027-05-01":{"out":"20:01"},"2027-05-07":{"in":"18:55"},"2027-05-08":{"out":"20:07"},"2027-05-14":{"in":"19:01"},"2027-05-15":{"out":"20:13"},"2027-05-21":{"in":"19:06"},"2027-05-22":{"out":"20:18"},"2027-05-28":{"in":"19:10"},"2027-05-29":{"out":"20:23"},"2027-06-04":{"in":"19:14"},"2027-06-05":{"out":"20:28"},"2027-06-10":{"in":"19:17"},"2027-06-11":{"in":"19:18"},"2027-06-12":{"out":"20:31"},"2027-06-18":{"in":"19:20"},"2027-06-19":{"out":"20:34"},"2027-06-25":{"in":"19:21"},"2027-06-26":{"out":"20:35"},"2027-07-02":{"in":"19:22"},"2027-07-03":{"out":"20:35"},"2027-07-09":{"in":"19:21"},"2027-07-10":{"out":"20:33"},"2027-07-16":{"in":"19:18"},"2027-07-17":{"out":"20:30"},"2027-07-23":{"in":"19:15"},"2027-07-24":{"out":"20:26"},"2027-07-30":{"in":"19:10"},"2027-07-31":{"out":"20:20"},"2027-08-06":{"in":"19:04"},"2027-08-07":{"out":"20:13"},"2027-08-13":{"in":"18:57"},"2027-08-14":{"out":"20:06"},"2027-08-20":{"in":"18:50"},"2027-08-21":{"out":"19:57"},"2027-08-27":{"in":"18:41"},"2027-08-28":{"out":"19:48"},"2027-09-03":{"in":"18:32"},"2027-09-04":{"out":"19:39"},"2027-09-10":{"in":"18:23"},"2027-09-11":{"out":"19:29"},"2027-09-17":{"in":"18:14"},"2027-09-18":{"out":"19:19"},"2027-09-24":{"in":"18:04"},"2027-09-25":{"out":"19:10"},"2027-10-01":{"in":"17:55"},"2027-10-02":{"in":"19:00"},"2027-10-03":{"out":"18:59"},"2027-10-08":{"in":"17:46"},"2027-10-09":{"out":"18:51"},"2027-10-10":{"in":"17:43"},"2027-10-11":{"out":"18:49"},"2027-10-15":{"in":"17:37"},"2027-10-16":{"out":"18:43"}},"באר שבע":{"2026-10-23":{"in":"17:42"},"2026-10-24":{"out":"18:36"},"2026-10-30":{"in":"16:35"},"2026-10-31":{"out":"17:30"},"2026-11-06":{"in":"16:30"},"2026-11-07":{"out":"17:25"},"2026-11-13":{"in":"16:25"},"2026-11-14":{"out":"17:21"},"2026-11-20":{"in":"16:22"},"2026-11-21":{"out":"17:18"},"2026-11-27":{"in":"16:20"},"2026-11-28":{"out":"17:17"},"2026-12-04":{"in":"16:19"},"2026-12-05":{"out":"17:17"},"2026-12-11":{"in":"16:20"},"2026-12-12":{"out":"17:18"},"2026-12-18":{"in":"16:22"},"2026-12-19":{"out":"17:21"},"2026-12-25":{"in":"16:26"},"2026-12-26":{"out":"17:25"},"2027-01-01":{"in":"16:31"},"2027-01-02":{"out":"17:29"},"2027-01-08":{"in":"16:36"},"2027-01-09":{"out":"17:34"},"2027-01-15":{"in":"16:42"},"2027-01-16":{"out":"17:40"},"2027-01-22":{"in":"16:48"},"2027-01-23":{"out":"17:46"},"2027-01-29":{"in":"16:54"},"2027-01-30":{"out":"17:52"},"2027-02-05":{"in":"17:01"},"2027-02-06":{"out":"17:57"},"2027-02-12":{"in":"17:07"},"2027-02-13":{"out":"18:03"},"2027-02-19":{"in":"17:13"},"2027-02-20":{"out":"18:08"},"2027-02-26":{"in":"17:18"},"2027-02-27":{"out":"18:13"},"2027-03-05":{"in":"17:23"},"2027-03-06":{"out":"18:18"},"2027-03-12":{"in":"17:28"},"2027-03-13":{"out":"18:23"},"2027-03-19":{"in":"17:33"},"2027-03-20":{"out":"18:28"},"2027-03-26":{"in":"18:37"},"2027-03-27":{"out":"19:33"},"2027-04-02":{"in":"18:42"},"2027-04-03":{"out":"19:38"},"2027-04-09":{"in":"18:47"},"2027-04-10":{"out":"19:43"},"2027-04-16":{"in":"18:51"},"2027-04-17":{"out":"19:48"},"2027-04-21":{"in":"18:55"},"2027-04-22":{"out":"19:51"},"2027-04-23":{"in":"18:56"},"2027-04-24":{"out":"19:53"},"2027-04-27":{"in":"18:59"},"2027-04-28":{"out":"19:56"},"2027-04-30":{"in":"19:01"},"2027-05-01":{"out":"19:58"},"2027-05-07":{"in":"19:06"},"2027-05-08":{"out":"20:04"},"2027-05-14":{"in":"19:10"},"2027-05-15":{"out":"20:09"},"2027-05-21":{"in":"19:15"},"2027-05-22":{"out":"20:15"},"2027-05-28":{"in":"19:19"},"2027-05-29":{"out":"20:19"},"2027-06-04":{"in":"19:23"},"2027-06-05":{"out":"20:24"},"2027-06-10":{"in":"19:26"},"2027-06-11":{"in":"19:26"},"2027-06-12":{"out":"20:27"},"2027-06-18":{"in":"19:29"},"2027-06-19":{"out":"20:30"},"2027-06-25":{"in":"19:30"},"2027-06-26":{"out":"20:31"},"2027-07-02":{"in":"19:31"},"2027-07-03":{"out":"20:31"},"2027-07-09":{"in":"19:30"},"2027-07-10":{"out":"20:29"},"2027-07-16":{"in":"19:28"},"2027-07-17":{"out":"20:26"},"2027-07-23":{"in":"19:24"},"2027-07-24":{"out":"20:22"},"2027-07-30":{"in":"19:20"},"2027-07-31":{"out":"20:17"},"2027-08-06":{"in":"19:14"},"2027-08-07":{"out":"20:11"},"2027-08-13":{"in":"19:08"},"2027-08-14":{"out":"20:03"},"2027-08-20":{"in":"19:00"},"2027-08-21":{"out":"19:55"},"2027-08-27":{"in":"18:52"},"2027-08-28":{"out":"19:47"},"2027-09-03":{"in":"18:44"},"2027-09-04":{"out":"19:38"},"2027-09-10":{"in":"18:35"},"2027-09-11":{"out":"19:29"},"2027-09-17":{"in":"18:26"},"2027-09-18":{"out":"19:19"},"2027-09-24":{"in":"18:17"},"2027-09-25":{"out":"19:10"},"2027-10-01":{"in":"18:08"},"2027-10-02":{"in":"19:01"},"2027-10-03":{"out":"19:00"},"2027-10-08":{"in":"17:59"},"2027-10-09":{"out":"18:53"},"2027-10-10":{"in":"17:57"},"2027-10-11":{"out":"18:50"},"2027-10-15":{"in":"17:51"},"2027-10-16":{"out":"18:45"}}}};
+const CITY="תל אביב";
+const GRANDKIDS=["גיא","נעמה","שלומי","דניאל אלון","תאיר","דן (של עמי)","סתיו","גל (של עמי)","ליאור","מאי","נועה","דניאל דהאן","נועם","טל","הדר","גל (של חני)","דן (של חני)","רז","עדי"];
+const START=new Date(2026,9,19), END=new Date(2027,9,18);
+const RESCUE_DAYS=3;
+const DAYS=["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
+const DLET=["א׳","ב׳","ג׳","ד׳","ה׳","ו׳","ש׳"];
+const MONTHS=["ינואר","פברואר","מרץ","אפריל","מאי","יוני","יולי","אוגוסט","ספטמבר","אוקטובר","נובמבר","דצמבר"];
+const pad=n=>String(n).padStart(2,"0");
+const key=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const mkey=k=>k.slice(0,7);
+const parse=k=>{const [y,m,d]=k.split("-").map(Number);return new Date(y,m-1,d)};
+const $=id=>document.getElementById(id);
+const el=(tag,cls,text)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e};
+
+const NIGHTS=[];for(let d=new Date(START);d<=END;d.setDate(d.getDate()+1))NIGHTS.push(key(d));
+const IN_RANGE=new Set(NIGHTS);
+const N=GRANDKIDS.length;
+const TIMES=CAL.times[CITY];
+const isSpecial=k=>{const d=parse(k).getDay();return d===5||d===6||!!(TIMES[k]&&TIMES[k].in)||(CAL.holidays[k]||[]).some(h=>h.m)};
+const SPECIAL=NIGHTS.filter(isSpecial);
+const SPECIAL_QUOTA=Math.ceil(SPECIAL.length/N);
+const TARGET=NIGHTS.length/N;
+const WEEKS=[];{const s=new Date(START);s.setDate(s.getDate()-s.getDay());for(let d=new Date(s);d<=END;d.setDate(d.getDate()+7)){const w=[];for(let i=0;i<7;i++){const x=new Date(d);x.setDate(x.getDate()+i);w.push(key(x))}WEEKS.push(w)}}
+
+let bookings={}, replies={}, chat=[], myId=null, isAdmin=false, db=null, live=false, canWrite=true, busy=false, confirmKey=null, editingNote=null;
+const drafts={}; // per-input drafts that survive re-renders
+let me="";
+try{me=localStorage.getItem("pajama-me")||""}catch(e){}
+if(!GRANDKIDS.includes(me))me="";
+const t0=(()=>{const t=new Date();t.setHours(0,0,0,0);return t})();
+const todayKey=key(t0);
+const weekOf=k=>Math.max(0,WEEKS.findIndex(w=>w.includes(k)));
+let wi=IN_RANGE.has(todayKey)?weekOf(todayKey):0;
+let dayIdx=null;
+
+function toast(msg){const t=$("toast");t.textContent=msg;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,3600)}
+function notice(msg){const n=$("notice");if(!msg){n.hidden=true;return}n.textContent=msg;n.hidden=false}
+const fmt=k=>{const d=parse(k);return `${DAYS[d.getDay()]} ${d.getDate()}.${d.getMonth()+1}`};
+const daysAway=k=>Math.round((parse(k)-t0)/864e5);
+const nightsOf=(name,b=bookings)=>Object.keys(b).filter(k=>b[k].name===name).sort();
+const when=iso=>{if(!iso)return"";const d=new Date(iso);const t=`${pad(d.getHours())}:${pad(d.getMinutes())}`;const same=d.toDateString()===new Date().toDateString();return same?t:`${d.getDate()}.${d.getMonth()+1} ${t}`};
+const selKey=()=>WEEKS[wi][dayIdx];
+
+// Only the yearly Shabbat/holiday share is limited; no monthly cap.
+function blockReason(name,k,b=bookings){
+  if(daysAway(k)<=RESCUE_DAYS||!isSpecial(k))return null;
+  const s=nightsOf(name,b).filter(isSpecial).length;
+  return s>=SPECIAL_QUOTA?`הגעת למכסת לילות שבת וחג לשנה (${SPECIAL_QUOTA}), כדי שכולם יקבלו חלק שווה בלילות המבוקשים. לילה כזה שעדיין פנוי ${RESCUE_DAYS} ימים לפני מועדו פתוח לכולם.`:null;
+}
+
+function timesFor(k){
+  const t=TIMES[k];if(!t)return null;
+  const d=parse(k).getDay(), chagToday=(CAL.holidays[k]||[]).some(h=>h.m);
+  const tm=new Date(parse(k));tm.setDate(tm.getDate()+1);
+  const chagTomorrow=(CAL.holidays[key(tm)]||[]).some(h=>h.m);
+  if(t.in){if(d===5&&!chagTomorrow)return ["כניסת שבת",t.in];if(chagToday)return ["הדלקת נרות",t.in];return [d===5?"כניסת שבת וחג":"כניסת חג",t.in]}
+  if(t.out)return [d===6&&!chagToday?"צאת שבת":(d===6?"צאת שבת וחג":"צאת חג"),t.out];
+  return null;
+}
+function addTags(c,k){
+  const hol=CAL.holidays[k]||[], d=parse(k).getDay();
+  hol.forEach(h=>c.appendChild(el("span","tag "+(h.m?"chag":"hol"),h.n)));
+  if(!hol.length&&d===5)c.appendChild(el("span","tag hol","ערב שבת"));
+  if(!hol.length&&d===6)c.appendChild(el("span","tag hol","מוצאי שבת"));
+  const tm=timesFor(k);
+  if(tm){const s=el("span","times",tm[0]+" ");s.appendChild(el("b",null,tm[1]));c.appendChild(s)}
+}
+
+// ---------- entry ----------
+GRANDKIDS.forEach(n=>{const b=el("button",null,n);b.type="button";b.onclick=()=>choose(n);$("names").appendChild(b)});
+function choose(n){me=n;try{localStorage.setItem("pajama-me",n)}catch(e){};confirmKey=null;show();scrollTo({top:0})}
+$("switch").onclick=()=>{me="";try{localStorage.removeItem("pajama-me")}catch(e){};show()};
+function show(){
+  const inApp=!!me;
+  $("welcome").hidden=inApp;["board","p-chat","p-stats","p-table","hello"].forEach(id=>$(id).hidden=!inApp);
+  if(inApp){$("hello-name").textContent=me;render();renderChat(true)}
+}
+
+// ---------- week navigation ----------
+const jump=$("jump");
+const MONTH_KEYS=[...new Set(NIGHTS.map(mkey))];
+MONTH_KEYS.forEach(m=>{const [y,mm]=m.split("-").map(Number);const o=el("option",null,`קפיצה ל${MONTHS[mm-1]} ${y}`);o.value=m;jump.appendChild(o)});
+jump.onchange=()=>{const first=NIGHTS.find(k=>mkey(k)===jump.value);go(weekOf(first),first)};
+$("prev").onclick=()=>go(wi-1);
+$("next").onclick=()=>go(wi+1);
+$("today").onclick=()=>go(IN_RANGE.has(todayKey)?weekOf(todayKey):0,todayKey);
+function go(i,focusKey){
+  if(i<0||i>=WEEKS.length)return;
+  wi=i;confirmKey=null;editingNote=null;
+  const w=WEEKS[wi];
+  dayIdx=focusKey&&w.includes(focusKey)?w.indexOf(focusKey):w.findIndex(k=>IN_RANGE.has(k));
+  render(true);
+}
+function selectDay(i,scroll){if(i===dayIdx)return;dayIdx=i;confirmKey=null;editingNote=null;render(scroll)}
+let sx=null;
+$("week").addEventListener("touchstart",e=>{sx=e.touches[0].clientX},{passive:true});
+$("week").addEventListener("touchend",e=>{
+  if(sx===null)return;const dx=e.changedTouches[0].clientX-sx;sx=null;
+  if(getComputedStyle($("week")).display==="flex")return;
+  if(Math.abs(dx)>60)go(dx>0?wi+1:wi-1);
+});
+let scrollT;
+$("week").addEventListener("scroll",()=>{
+  clearTimeout(scrollT);scrollT=setTimeout(()=>{
+    const box=$("week");if(getComputedStyle(box).display!=="flex")return;
+    const r=box.getBoundingClientRect(),mid=r.left+r.width/2;let best=null,bd=1e9;
+    [...box.children].forEach(c=>{const cr=c.getBoundingClientRect();const d=Math.abs(cr.left+cr.width/2-mid);if(d<bd){bd=d;best=c}});
+    if(!best)return;const i=WEEKS[wi].indexOf(best.dataset.k);
+    if(i>=0&&i!==dayIdx)selectDay(i,false);
+  },140);
+},{passive:true});
+
+function render(scrollDay){
+  if(!me)return;
+  const w=WEEKS[wi];
+  const a=parse(w.find(k=>IN_RANGE.has(k))), z=parse([...w].reverse().find(k=>IN_RANGE.has(k)));
+  $("range").textContent=`${a.getDate()}.${a.getMonth()+1} – ${z.getDate()}.${z.getMonth()+1}`;
+  jump.value=mkey(w.find(k=>IN_RANGE.has(k)));
+  $("prev").disabled=wi===0;$("next").disabled=wi===WEEKS.length-1;
+  if(dayIdx===null||!IN_RANGE.has(w[dayIdx]))dayIdx=w.includes(todayKey)?w.indexOf(todayKey):w.findIndex(k=>IN_RANGE.has(k));
+
+  const dp=$("daypick");dp.textContent="";
+  w.forEach((k,i)=>{
+    const b=el("button");b.type="button";b.setAttribute("role","tab");
+    const inR=IN_RANGE.has(k), bk=bookings[k];
+    b.className=(!inR?"x":bk&&bk.name===me?"m":!bk&&daysAway(k)>=0?"f":"")+(i===dayIdx?" on":"");
+    b.setAttribute("aria-selected",i===dayIdx?"true":"false");
+    b.append(DLET[i]);b.appendChild(el("small",null,parse(k).getDate()));
+    b.disabled=!inR;b.onclick=()=>selectDay(i,true);
+    dp.appendChild(b);
+  });
+
+  const box=$("week");const keepX=box.scrollLeft;box.textContent="";
+  w.forEach((k,i)=>box.appendChild(card(k,i)));
+  if(!scrollDay)box.scrollLeft=keepX;
+  if(scrollDay){const c=$("n-"+w[dayIdx]);if(c&&getComputedStyle(box).display==="flex")c.scrollIntoView({block:"nearest",inline:"center",behavior:"smooth"})}
+
+  const up=nightsOf(me).filter(k=>daysAway(k)>=0);
+  $("cal-hint").textContent=`${up.length?`יש לך ${up.length} לילות קרובים.`:"עוד אין לך לילות קרובים."} לחצו על לילה כדי לראות פרטים, הערות ותגובות.`;
+  renderDetails();
+  stats(mkey(w.find(k=>IN_RANGE.has(k))));
+}
+
+function card(k,i){
+  const c=el("div");c.dataset.k=k;c.id="n-"+k;
+  if(!IN_RANGE.has(k)){c.className="night blank";return c}
+  const b=bookings[k], d=parse(k), diff=daysAway(k), sp=isSpecial(k);
+  c.className="night "+(b?"taken":"free")+(b&&b.name===me?" mine":"")+(diff<0?" past":"")+(!b&&diff>=0&&diff<=RESCUE_DAYS?" soon":"")+(sp&&!(b&&b.name===me)?" special":"")+(i===dayIdx?" sel":"");
+  c.onclick=e=>{if(!e.target.closest("button"))selectDay(i,false)};
+  const top=el("div","d");top.append(el("span","day",DAYS[d.getDay()]),el("span","date",`${d.getDate()}.${d.getMonth()+1}`));c.appendChild(top);
+  addTags(c,k);
+  c.appendChild(el("div","who-slot",b?b.name:(diff<0?"עבר":(diff<=RESCUE_DAYS?"פנוי, סבתא לבד!":"פנוי"))));
+  const rc=(replies[k]||[]).length;
+  if(b&&(b.note||rc)){
+    const s=el("div","notesnip");
+    if(b.note){s.appendChild(el("b",null,"הערה: "));s.append(b.note)}
+    if(rc)s.append((b.note?" · ":"")+`${rc} ${rc===1?"תגובה":"תגובות"}`);
+    c.appendChild(s);
+  }
+  const row=el("div","row");
+  if(diff>=0&&!b){
+    const why=blockReason(me,k);
+    const btn=el("button",why?"btn ghost":"btn",why?"מעבר למכסה":"אני ישן/ה פה");btn.type="button";btn.id="take-"+k;
+    btn.disabled=busy||!live||(!why&&!canWrite);if(why)btn.title=why;
+    btn.onclick=()=>why?toast(why):claim(k,"");row.appendChild(btn);
+  }
+  c.appendChild(row);return c;
+}
+
+// ---------- details of the selected night ----------
+let detailsSig="";
+function renderDetails(){
+  const k=selKey(), box=$("details");
+  if(!k||!IN_RANGE.has(k)){box.hidden=true;return}
+  const b=bookings[k], rs=replies[k]||[];
+  const sig=JSON.stringify([k,b,rs.map(r=>r.id),confirmKey,editingNote,busy,live,canWrite,me]);
+  if(sig===detailsSig)return;detailsSig=sig;
+  box.hidden=false;box.textContent="";
+  const diff=daysAway(k), isMine=b&&b.name===me;
+  const canManage=b&&live&&isMine;
+  box.appendChild(el("h3",null,"יום "+fmt(k)));
+  const meta=el("div","meta");addTags(meta,k);if(meta.children.length)box.appendChild(meta);
+  box.appendChild(el("div","status",b?`ישן/ה אצל סבתא: ${b.name}`:(diff<0?"הלילה הזה עבר":"הלילה פנוי")));
+
+  if(!b&&diff>=0){
+    const why=blockReason(me,k);
+    if(why)box.appendChild(el("p","hint",why));
+    else{
+      const lab=el("label","sr","הערה לשיבוץ");lab.htmlFor="note-new";
+      const ta=el("textarea");ta.id="note-new";ta.maxLength=500;ta.placeholder="הערה לכולם (לא חובה). למשל: אגיע אחרי החוג, בסביבות 20:00";
+      ta.value=drafts["new-"+k]||"";ta.oninput=()=>drafts["new-"+k]=ta.value;
+      const btn=el("button","btn","אני ישן/ה פה");btn.type="button";btn.id="take-d";
+      btn.disabled=busy||!live||!canWrite;btn.onclick=()=>claim(k,ta.value.trim());
+      box.append(lab,ta,btn);
+    }
+  }
+
+  if(b){
+    if(editingNote===k){
+      const lab=el("label","sr","עריכת הערה");lab.htmlFor="note-edit";
+      const ta=el("textarea");ta.id="note-edit";ta.maxLength=500;ta.value=drafts["edit-"+k]??(b.note||"");ta.oninput=()=>drafts["edit-"+k]=ta.value;
+      const row=el("div","row");
+      const save=el("button","btn","שמירת ההערה");save.type="button";save.id="note-save";save.onclick=()=>saveNote(k,ta.value.trim());
+      const cancel=el("button","btn ghost","ביטול");cancel.type="button";cancel.onclick=()=>{editingNote=null;delete drafts["edit-"+k];renderDetails()};
+      row.append(save,cancel);box.append(lab,ta,row);
+    }else if(b.note){
+      const n=el("div","note");n.appendChild(el("small",null,`הערה של ${b.name}`));n.append(b.note);box.appendChild(n);
+    }
+    const row=el("div","row");
+    if(canManage&&editingNote!==k){
+      const e=el("button","btn ghost",b.note?"עריכת ההערה":"הוספת הערה");e.type="button";e.id="note-edit-btn";e.onclick=()=>{editingNote=k;renderDetails()};row.appendChild(e);
+    }
+    if(canManage&&diff>=0){
+      if(confirmKey===k){
+        row.appendChild(el("span","confirm","לבטל את השיבוץ?"));
+        const yes=el("button","btn danger","כן, לבטל");yes.type="button";yes.id="yes-d";yes.onclick=()=>release(k);
+        const no=el("button","btn ghost","השאר");no.type="button";no.onclick=()=>{confirmKey=null;renderDetails()};
+        row.append(yes,no);
+      }else{
+        const x=el("button","btn ghost","ביטול השיבוץ שלי");x.type="button";x.id="cancel-d";x.onclick=()=>{confirmKey=k;renderDetails()};row.appendChild(x);
+      }
+    }
+    if(row.children.length)box.appendChild(row);
+
+    const list=el("div","replies");
+    rs.forEach(r=>{const d=el("div","reply");d.appendChild(el("b",null,r.name));d.appendChild(el("span",null,when(r.at)));d.appendChild(el("p",null,r.text));list.appendChild(d)});
+    box.appendChild(el("h4",null,rs.length?`תגובות (${rs.length})`:"תגובות"));
+    box.lastChild.style.margin="4px 0 0";
+    if(rs.length)box.appendChild(list);
+    const f=el("form","say");
+    const lab=el("label","sr","תגובה");lab.htmlFor="reply-in";
+    const inp=el("input");inp.type="text";inp.id="reply-in";inp.maxLength=500;inp.placeholder=`תגובה ל${b.name}…`;inp.autocomplete="off";
+    inp.value=drafts["reply-"+k]||"";inp.oninput=()=>drafts["reply-"+k]=inp.value;
+    const send=el("button","btn","הגב");send.type="submit";send.disabled=!live||!canWrite;
+    f.onsubmit=e=>{e.preventDefault();sendReply(k,inp.value.trim())};
+    f.append(lab,inp,send);box.appendChild(f);
+  }
+}
+
+// ---------- chat ----------
+function renderChat(force){
+  const box=$("msgs");if(!box||(!force&&$("p-chat").hidden))return;
+  const atBottom=box.scrollHeight-box.scrollTop-box.clientHeight<40;
+  box.textContent="";
+  if(!chat.length){box.appendChild(el("p","empty","עוד אין הודעות. כל שיבוץ, ביטול והערה יופיעו כאן."));return}
+  chat.forEach(m=>{
+    const d=el("div","msg"+(m.kind==="sys"?" sys":m.name===me?" me":""));
+    if(m.kind!=="sys")d.appendChild(el("b",null,m.name));
+    d.appendChild(el("p",null,m.text));
+    d.appendChild(el("time",null,when(m.at)));
+    box.appendChild(d);
+  });
+  if(atBottom||force)box.scrollTop=box.scrollHeight;
+}
+$("chat-form").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const inp=$("chat-in"),t=inp.value.trim();if(!t)return;
+  inp.value="";
+  try{apply(await api("addChat",me,t));const b=$("msgs");b.scrollTop=b.scrollHeight}
+  catch(err){inp.value=t;handleErr(err)}
+});
+
+// ---------- stats ----------
+function stats(view){
+  const total=NIGHTS.length, booked=Object.keys(bookings).length;
+  const rows=GRANDKIDS.map(n=>{const ks=nightsOf(n);return {n,all:ks.length,sp:ks.filter(isSpecial).length,mo:ks.filter(k=>mkey(k)===view).length}});
+  const max=Math.max(...rows.map(r=>r.all)), min=Math.min(...rows.map(r=>r.all));
+  $("s-booked").textContent=booked;$("s-total").textContent=total;
+  $("s-target").textContent=TARGET.toFixed(1);$("s-spread").textContent=max-min;
+  $("s-bar").style.width=(booked/total*100)+"%";
+  $("s-math").textContent=`${total} לילות ו־${N} נכדים: כ־${TARGET.toFixed(1)} לילות לכל אחד בשנה, מתוכם עד ${SPECIAL_QUOTA} לילות שבת וחג (יש ${SPECIAL.length} כאלה בשנה).`;
+  const v=$("verdict");
+  const spSpread=Math.max(...rows.map(r=>r.sp))-Math.min(...rows.map(r=>r.sp));
+  if(max-min<=2&&spSpread<=2){v.className="verdict ok";v.textContent=booked?`מאוזן: הפער בין הנכדים הוא ${max-min} לילות לכל היותר.`:"עוד אין שיבוצים. הלוח פתוח."}
+  else{const low=rows.filter(r=>r.all===min).map(r=>r.n);v.className="verdict bad";v.textContent=`פער של ${max-min} לילות. כדאי לתת עדיפות ל: ${low.slice(0,6).join(", ")}${low.length>6?"…":""}.`}
+  $("th-month").textContent=MONTHS[Number(view.split("-")[1])-1];
+  const tb=$("people");tb.textContent="";
+  rows.sort((a,b)=>a.all-b.all||a.sp-b.sp).forEach(r=>{
+    const tr=el("tr",r.n===me?"me":null);
+    const a=el("td","n",r.all),s=el("td","n",r.sp),m=el("td","n",r.mo);
+    const p=el("td");const bar=el("div","mini");const i=el("i");
+    i.style.width=Math.min(100,r.all/TARGET*100)+"%";if(r.all===min&&max-min>2)i.className="low";bar.appendChild(i);p.appendChild(bar);
+    tr.append(el("td",null,r.n),a,s,m,p);tb.appendChild(tr);
+  });
+  const up=nightsOf(me).filter(k=>daysAway(k)>=0);
+  $("mine-box").hidden=false;$("mine-sum").textContent=up.length?"הלילות הקרובים שלך (לחצו כדי לקפוץ):":"אין לך עדיין לילות קרובים.";
+  const l=$("mine-list");l.textContent="";
+  up.slice(0,12).forEach(k=>{const s=el("button","chipbtn",fmt(k));s.type="button";s.onclick=()=>{go(weekOf(k),k);$("board").scrollIntoView({behavior:"smooth"})};l.appendChild(s)});
+  const rules=$("rules");rules.textContent="";
+  [`אין הגבלה חודשית. מי שישן הכי מעט קודם בתור, ופער של יותר מ־2 לילות מסומן באדום.`,
+   `לילות שבת וחג: עד ${SPECIAL_QUOTA} בשנה לכל נכד, כדי שכולם יקבלו חלק בלילות המבוקשים.`,
+   `לילה שעדיין פנוי ${RESCUE_DAYS} ימים לפני מועדו פתוח לכולם בלי מגבלה, כדי שסבתא לא תישאר לבד.`,
+   "אי אפשר לדרוס שם של מישהו אחר. רק מי ששריין יכול לבטל, אחרי תיאום.",
+   "כל שיבוץ, ביטול והערה נרשמים בצ׳אט המשפחתי, ואסף יכול לתקן הכל ישירות בגיליון."
+  ].forEach(t=>rules.appendChild(el("li",null,t)));
+}
+
+// ---------- server (Google Apps Script) ----------
+// Data lives in one JSON document on jsonblob.com; its id is published by the repo's GitHub Action.
+let BLOB=null;
+async function blobId(){
+  if(BLOB)return BLOB;
+  for(const u of ["data/blob.txt?t="+Date.now(),"https://raw.githubusercontent.com/asafkonyak/savta/main/data/blob.txt?t="+Date.now()]){
+    try{const r=await fetch(u,{cache:"no-store"});if(r.ok){const t=(await r.text()).trim();if(t){BLOB=t;return t}}}catch(e){}
+  }
+  throw new Error("no blob id");
+}
+const blobUrl=id=>"https://jsonblob.com/api/jsonBlob/"+id;
+async function load(){
+  const r=await fetch(blobUrl(await blobId()),{headers:{Accept:"application/json"},cache:"no-store"});
+  if(!r.ok)throw new Error("load "+r.status);
+  const d=await r.json();d.bookings=d.bookings||{};d.replies=d.replies||[];d.chat=d.chat||[];return d;
+}
+async function save(d){
+  d.chat=d.chat.slice(-300);
+  const r=await fetch(blobUrl(await blobId()),{method:"PUT",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify(d)});
+  if(!r.ok)throw new Error("save "+r.status);
+}
+const toState=d=>({bookings:Object.keys(d.bookings).map(k=>({date:k,name:d.bookings[k].name,note:d.bookings[k].note||"",at:d.bookings[k].at})),replies:d.replies,chat:d.chat.slice(-200)});
+const nowIso=()=>new Date().toISOString();
+const sysMsg=(d,name,text)=>d.chat.push({kind:"sys",name,text,at:nowIso()});
+const clip=t=>String(t||"").trim().slice(0,500);
+let writeQueue=Promise.resolve();
+// Read the latest document, change it, write it back, then read again to confirm.
+function mutate(fn,check){
+  const p=writeQueue.then(async()=>{
+    const d=await load();const err=fn(d);
+    if(err)return {error:err,state:toState(d)};
+    await save(d);const v=await load();
+    const err2=check?check(v):null;
+    return err2?{error:err2,state:toState(v)}:{state:toState(v)};
+  });
+  writeQueue=p.catch(()=>{});return p;
+}
+const SERVER={
+  getState:async()=>toState(await load()),
+  claim:(k,name,note)=>{note=clip(note);return mutate(d=>{
+    if(d.bookings[k])return `הלילה כבר נתפס על ידי ${d.bookings[k].name}.`;
+    d.bookings[k]={name,note,at:nowIso()};
+    sysMsg(d,name,`שיבוץ חדש: ${name} ביום ${fmt(k)}`+(note?` · "${note}"`:""));
+  },v=>v.bookings[k]&&v.bookings[k].name===name?null:"מישהו אחר תפס את הלילה באותו רגע. בחרו לילה אחר.")},
+  release:(k,name)=>mutate(d=>{
+    if(!d.bookings[k]||d.bookings[k].name!==name)return "השיבוץ הזה כבר לא קיים.";
+    delete d.bookings[k];sysMsg(d,name,`ביטול: ${name} פינה את יום ${fmt(k)}. הלילה פנוי`);
+  }),
+  saveNote:(k,name,note)=>{note=clip(note);return mutate(d=>{
+    if(!d.bookings[k]||d.bookings[k].name!==name)return "השיבוץ הזה כבר לא קיים.";
+    d.bookings[k].note=note;if(note)sysMsg(d,name,`הערה מ${name} על יום ${fmt(k)}: "${note}"`);
+  })},
+  addReply:(k,name,text)=>{text=clip(text);return mutate(d=>{if(text)d.replies.push({id:"r"+Date.now()+Math.random().toString(36).slice(2,6),date:k,name,text,at:nowIso()})})},
+  addChat:(name,text)=>{text=clip(text);return mutate(d=>{if(text)d.chat.push({kind:"msg",name,text,at:nowIso()})})}
+};
+const api=(fn,...args)=>SERVER[fn](...args);
+function applyState(st){
+  const nb={};(st.bookings||[]).forEach(b=>{nb[b.date]={name:b.name,by:null,note:b.note||""}});
+  const nr={};(st.replies||[]).forEach(r=>{(nr[r.date]??=[]).push({id:r.id,name:r.name,text:r.text,at:r.at})});
+  Object.values(nr).forEach(a=>a.sort((x,y)=>x.at<y.at?-1:1));
+  bookings=nb;replies=nr;chat=st.chat||[];live=true;notice("");
+  render();renderChat();
+}
+function apply(res){if(res&&res.error)toast(res.error);if(res&&res.state)applyState(res.state)}
+let polling=false;
+async function refresh(){
+  if(polling||busy)return;polling=true;
+  try{applyState(await api("getState"))}
+  catch(e){notice(live?"אין כרגע חיבור ללוח. מנסה שוב…":"הלוח נטען…")}
+  finally{polling=false}
+}
+
+// ---------- writes ----------
+async function claim(k,note){
+  if(!me||busy)return;
+  const why=blockReason(me,k);if(why){toast(why);return}
+  busy=true;render();
+  try{
+    const res=await api("claim",k,me,note||"");
+    if(!res.error){delete drafts["new-"+k];toast(`נרשמת! ${me} ישן/ה אצל סבתא ביום ${fmt(k)}`)}
+    busy=false;apply(res);
+  }catch(e){handleErr(e)}
+  finally{busy=false;render()}
+}
+async function release(k){
+  busy=true;confirmKey=null;render();
+  try{const res=await api("release",k,me);if(!res.error)toast(`הלילה של ${fmt(k)} שוחרר.`);busy=false;apply(res)}
+  catch(e){handleErr(e)}finally{busy=false;render()}
+}
+async function saveNote(k,note){
+  busy=true;
+  try{const res=await api("saveNote",k,me,note);if(!res.error){editingNote=null;delete drafts["edit-"+k];toast("ההערה נשמרה.")}busy=false;apply(res)}
+  catch(e){handleErr(e)}finally{busy=false;render()}
+}
+async function sendReply(k,text){
+  if(!text)return;
+  try{const res=await api("addReply",k,me,text);delete drafts["reply-"+k];detailsSig="";apply(res);const inp=$("reply-in");if(inp)inp.focus()}
+  catch(e){handleErr(e)}
+}
+function handleErr(e){toast("משהו השתבש. בדקו את החיבור ונסו שוב.")}
+
+show();drawStars();
+requestAnimationFrame(()=>render(true));
+refresh();
+setInterval(()=>{if(!document.hidden)refresh()},15000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)refresh()});
+
+function drawStars(){
+  const cv=$("stars"),ctx=cv.getContext("2d");
+  const r=cv.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+  cv.width=r.width*dpr;cv.height=r.height*dpr;ctx.scale(dpr,dpr);
+  let seed=7;const rnd=()=>(seed=(seed*9301+49297)%233280)/233280;
+  for(let i=0;i<90;i++){ctx.fillStyle=`rgba(255,255,240,${.2+rnd()*.6})`;ctx.beginPath();ctx.arc(rnd()*r.width,rnd()*r.height,rnd()*1.4+.3,0,7);ctx.fill()}
+}
+addEventListener("resize",()=>{clearTimeout(drawStars.t);drawStars.t=setTimeout(drawStars,200)});
+</script>
+</body>
+</html>
