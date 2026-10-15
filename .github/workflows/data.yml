@@ -27,9 +27,11 @@ jobs:
             mv data/backup.tmp data/backup.json
           else
             if [ -s data/backup.json ]; then BODY=$(cat data/backup.json); else BODY="$SEED"; fi
-            LOC=$(curl -s -D - -o /dev/null -X POST -H 'Content-Type: application/json' -H 'Accept: application/json' --data "$BODY" https://jsonblob.com/api/jsonBlob | tr -d '\r' | awk 'tolower($1)=="location:"{print $2}')
+            curl -s -D data/post-headers.txt -o data/post-body.txt -X POST -H 'Content-Type: application/json' -H 'Accept: application/json' --data "$BODY" https://jsonblob.com/api/jsonBlob || echo "curl failed $?" >> data/post-headers.txt
+            LOC=$(tr -d '\r' < data/post-headers.txt | awk 'tolower($1)=="location:"{print $2}')
             ID=${LOC##*/}
-            test -n "$ID"
+            if [ -z "$ID" ]; then echo "POST did not return a store id" > data/status.txt; exit 0; fi
+            rm -f data/post-headers.txt data/post-body.txt
             echo "$ID" > data/blob.txt
             echo "$BODY" > data/backup.json
             echo "created new store $ID (previous status: $CODE)"
@@ -37,7 +39,7 @@ jobs:
           rm -f data/backup.tmp
           echo "store id: $ID"
           echo "CORS check:"
-          curl -s -D - -o /dev/null -X OPTIONS -H 'Origin: https://asafkonyak.github.io' -H 'Access-Control-Request-Method: PUT' -H 'Access-Control-Request-Headers: content-type' "https://jsonblob.com/api/jsonBlob/$ID" | grep -i '^access-control' || echo "NO CORS HEADERS"
+          curl -s -D - -o /dev/null -X OPTIONS -H 'Origin: https://asafkonyak.github.io' -H 'Access-Control-Request-Method: PUT' -H 'Access-Control-Request-Headers: content-type' "https://jsonblob.com/api/jsonBlob/$ID" | grep -i '^access-control' > data/status.txt || echo "NO CORS HEADERS" > data/status.txt
       - name: Save to the repo
         run: |
           git config user.name "savta-bot"
